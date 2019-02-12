@@ -1,8 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using Moq;
+using Moq.Language;
+using Moq.Language.Flow;
 using NUnit.Framework;
 
 namespace Fleck.Tests
@@ -122,7 +125,7 @@ namespace Fleck.Tests
             var a = new MockAsyncResult("A");
 
             m.Setup(x => x.BeginRead(d, 0, d.Length, It.IsAny<AsyncCallback>(), null))
-                .Returns<byte[], int, int, AsyncCallback, object>((b, o, l, c, s) => a);
+                .Returns(a);
 
             Assert.That(q.BeginRead(d, 0, d.Length, ar => { }, null), Is.EqualTo(a));
 
@@ -297,17 +300,38 @@ namespace Fleck.Tests
     }
 
     #region Helpers
+
+#if NET35
+    public delegate void Action<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+    public delegate void Action<T1, T2, T3, T4, T5, T6>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
+
+    public static class MoqExtensions
+    {
+        public static IReturnsThrows<Stream, IAsyncResult> Callback<T1, T2, T3, T4, T5>(this ICallback<Stream, IAsyncResult> call, Action<T1, T2, T3, T4, T5> callback)
+        {
+            call.SetCallbackWithArguments(callback);
+            return (IReturnsThrows<Stream, IAsyncResult>)call;
+        }
+        
+        public static void SetCallbackWithArguments(this ICallback<Stream, IAsyncResult> call, Delegate callback)
+        {
+            MethodInfo methodInfo = call.GetType().GetMethod("SetCallbackWithArguments", BindingFlags.NonPublic | BindingFlags.Instance);
+            methodInfo.Invoke(call, new object[] { callback });
+        }
+    }
+#endif
+
     static class StreamMockExtensions
     {
         public static void SetupBeginWrite(this Mock<Stream> mock, MockAsyncResult ar, StringBuilder trace)
         {
             mock.Setup(x => x.BeginWrite(ar.Data, 0, ar.Data.Length, It.IsAny<AsyncCallback>(), It.IsAny<object>()))
-                .Returns<byte[], int, int, AsyncCallback, object>((b, o, l, cb, os) =>
+                .Callback((byte[] a, int b, int c, AsyncCallback cb, object state) =>
                 {
                     trace.AppendFormat("BeginWrite({0})", ar);
                     ar.Callback = cb;
-                    return ar;
-                });
+                })
+                .Returns(ar);
         }
 
         public static void SetupBeginWrite(this Mock<Stream> mock, MockAsyncResult ar, Exception error, StringBuilder trace)

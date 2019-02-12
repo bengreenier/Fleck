@@ -9,7 +9,7 @@ namespace Fleck.Tests
         [OneTimeSetUp]
         public void SetUp()
         {
-            FleckLog.LogAction = (level, message, ex) => Debug.WriteLine("[{0}]{1}: {2}", level, message, ex);
+            FleckLog.LogAction = (level, message, ex) => Debug.WriteLine(string.Format("[{0}]{1}: {2}", level, message, ex));
         }
     }
 }

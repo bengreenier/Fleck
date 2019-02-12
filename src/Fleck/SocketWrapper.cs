@@ -153,7 +153,15 @@ namespace Fleck
         {
             _tokenSource.Cancel();
             if (_stream != null) _stream.Dispose();
-            if (_socket != null) _socket.Dispose();
+
+            if (_socket != null)
+            {
+#if NET35
+                _socket.Close();
+#else
+                _socket.Dispose();
+#endif
+            }
         }
 
         public void Close()

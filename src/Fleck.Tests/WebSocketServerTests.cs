@@ -8,6 +8,22 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Fleck.Tests
 {
+#if NET35
+    public class MockRepository
+    {
+        private MockBehavior behavior;
+
+        public MockRepository(MockBehavior behavior)
+        {
+            this.behavior = behavior;
+        }
+
+        public Mock<TMock> Create<TMock>() where TMock : class
+        {
+            return new Mock<TMock>(behavior);
+        }
+    }
+#endif
     [TestFixture]
     public class WebSocketServerTests
     {
@@ -41,7 +57,7 @@ namespace Fleck.Tests
 
             _server.ListenerSocket = socketMock.Object;
             _server.Start(connection => { });
-
+            
             socketMock.Verify(s => s.Bind(It.Is<IPEndPoint>(i => i.Port == 8000)));
             socketMock.Verify(s => s.Accept(It.IsAny<Action<ISocket>>(), It.IsAny<Action<Exception>>()));
         }
@@ -96,7 +112,7 @@ namespace Fleck.Tests
             _ipV6Socket.Connect(_ipV6Address, 8000);
         }
 
-#if __MonoCS__
+#if __MonoCS__ || NET35
           // None
 #else
 
@@ -114,8 +130,13 @@ namespace Fleck.Tests
         [TearDown]
         public void TearDown()
         {
+#if NET35
+            _ipV4Socket.Close();
+            _ipV6Socket.Close();
+#else
             _ipV4Socket.Dispose();
             _ipV6Socket.Dispose();
+#endif
             _server.Dispose();
         }
     }

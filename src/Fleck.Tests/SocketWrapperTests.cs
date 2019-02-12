@@ -67,9 +67,15 @@ namespace Fleck.Tests
         [TearDown]
         public void TearDown()
         {
+#if NET35
+            _socket.Close();
+            _client.Close();
+            _listener.Close();
+#else
             _socket.Dispose();
             _client.Dispose();
             _listener.Dispose();
+#endif
             _wrapper.Dispose();
         }
 

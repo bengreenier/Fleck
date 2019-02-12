@@ -30,7 +30,9 @@ namespace Fleck
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 #endif
                 {
+#if !NET35
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+#endif
                 }
 #if !NET45
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -39,7 +41,7 @@ namespace Fleck
                 }
 #endif
 #endif
-            }
+                }
             ListenerSocket = new SocketWrapper(socket);
             SupportedSubProtocols = new string[0];
         }
